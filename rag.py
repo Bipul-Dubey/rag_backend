@@ -96,7 +96,9 @@ async def upload_file(user_id: str = Form(...), file: UploadFile = File(...)):
 
     return {
         "message": f"Uploaded and embedded {len(chunks)} chunks.",
-        "filename": file.filename
+        "filename": file.filename,
+        "uploaded_at":uploaded_at,
+        "mongo_id":""
     }
 
 # Query Endpoint

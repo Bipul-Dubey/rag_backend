@@ -160,10 +160,14 @@ async def query_doc(request: QueryRequest):
 
     response = gemini_model.generate_content(prompt)
 
+    is_query_left = query_count < MAX_QUERY_A_DAY  
+
+
     return {
         "answer": response.text.strip(),
         "queries_used_today": query_count,
-        "queries_left_today": max(0, MAX_QUERY_A_DAY - query_count)
+        "queries_left_today": max(0, MAX_QUERY_A_DAY - query_count),
+        "is_query_left": is_query_left
     }
 
 @rag_router.get("/users/{user_id}", response_model=DocumentResponse)

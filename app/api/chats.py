@@ -69,10 +69,11 @@ async def query_documents(request: QueryRequest):
     {
         "doc_id": chunk["document_id"],
         "doc_name": docs_info.get(chunk["document_id"], {}).get("filename", ""),
-        "doc_url": docs_info.get(chunk["document_id"], {}).get("url", "")
+        "doc_url": docs_info.get(chunk["document_id"], {}).get("url", ""),
+        "s3_key":  docs_info.get(chunk["document_id"], {}).get("s3_key", "")
     }
     for chunk in top_chunks
-]
+    ]
 
     # Step 7: Generate answer using Gemini
     prompt = f"Use only this context to answer the question.\nContext:\n{context}\n\nQuestion: {request.query}\nAnswer:"
@@ -126,8 +127,11 @@ async def query_documents(request: QueryRequest):
             {"$push": {"messages": {"message_id": str(uuid4()), "role": "assistant", "content": answer, "timestamp": now, "references": references}}}
         )
 
-    return {
-        "answer": answer,
+    return{
+        "message_id": str(uuid4()),
+        "role": "assistant",
+        "timestamp": now,
+        "content": answer,
         "references": references,
         "chat_id": chat_id
     }

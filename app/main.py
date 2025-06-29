@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import documents,chats, users
-from fastapi.staticfiles import StaticFiles
+# from fastapi.staticfiles import StaticFiles
 from app.database.mongo import connect_to_mongo, close_mongo_connection
 from app.database.document_crud import ensure_indexes
 
@@ -26,7 +26,7 @@ async def startup_event():
 async def shutdown_event():
     await close_mongo_connection()
 
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+# app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
 # Include routers
@@ -36,5 +36,5 @@ app.include_router(users.router, prefix="/api/users", tags=["Users"])
 
 @app.get("/")
 async def root():
-    return {"message": "API is running."}
+    return {"message": "API is running..."}
 

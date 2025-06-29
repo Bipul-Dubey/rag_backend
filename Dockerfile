@@ -1,28 +1,25 @@
-# Use official Python image as a build stage for dependencies
+# ---------- Build Stage ----------
 FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
-# Install system dependencies only needed for build
+# Install only necessary build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies in a virtual environment
-COPY requirements.txt ./
-RUN python -m venv /opt/venv \
-    && /opt/venv/bin/pip install --upgrade pip \
-    && /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
+# Install dependencies into a virtual environment
+COPY requirements.txt .
+RUN python -m venv /opt/venv && \
+    /opt/venv/bin/pip install --upgrade pip && \
+    /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
 
-# --- Final image ---
+# ---------- Final Runtime Stage ----------
 FROM python:3.11-slim
+
 WORKDIR /app
 
-# System dependencies for runtime only
+# Install minimal runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
     libsm6 \
@@ -34,7 +31,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy the rest of the code
+# Copy application code
 COPY . .
 
 EXPOSE 8000

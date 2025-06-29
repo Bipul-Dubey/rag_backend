@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
-from app.models.documents import DocumentIn, DocumentOut
+from app.models.documents import  DocumentOut
 from app.database import document_crud
 from app.database.document_crud import store_chunks
 import os

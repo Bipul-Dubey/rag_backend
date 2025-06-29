@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.utils import embed_chunks
-from app.database.document_crud import get_chunk_collection, get_document_collection, get_chat_collection
+from app.database.document_crud import get_chunk_collection, get_document_collection, get_chat_collection, get_user_collection
 from bson import ObjectId
 import numpy as np
 from app.models.chats import QueryRequest
@@ -23,6 +23,14 @@ gemini_model = GenerativeModel(model_name="models/gemini-1.5-flash")
 
 # Create the API router
 router = APIRouter()
+
+@router.delete("/chat/{chat_id}")
+async def delete_chat(chat_id: str):
+    chat_collection = get_chat_collection()
+    result = await chat_collection.delete_one({"_id": ObjectId(chat_id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Chat not found or already deleted")
+    return {"message": "Chat deleted successfully"}
 
 @router.post("/query")
 async def query_documents(request: QueryRequest):
@@ -73,16 +81,36 @@ async def query_documents(request: QueryRequest):
     prompt = f"Use only this context to answer the question.\nContext:\n{context}\n\nQuestion: {request.query}\nAnswer:"
     response = gemini_model.generate_content(prompt)
     answer = response.text.strip() if hasattr(response, 'text') else str(response)
+    token_count = getattr(response, "usage", {}).get("total_tokens", None)
+    if token_count is None:
+        token_count = len(context.split()) + len(request.query.split()) + len(answer.split())
 
     # Step 8: Save to chat history
     chat_collection = get_chat_collection()
     chat_id = getattr(request, 'chat_id', None)
     now = datetime.utcnow()
+    # --- User stats update ---
+    user_collection = get_user_collection()
+    today = datetime.utcnow().date().isoformat()
+    # Try to update today's stats, or create if not exists
+    await user_collection.update_one(
+        {"user_id": request.user_id},
+        {
+            "$inc": {"total_query_count": 1, "total_token_count": token_count, f"daily_stats.{today}.query_count": 1, f"daily_stats.{today}.token_count": token_count},
+            "$setOnInsert": {"created_at": now}
+        },
+        upsert=True
+    )
+    # --- End user stats update ---
     if not chat_id:
         # Create new chat
+        title_prompt = f"Suggest a short, descriptive chat title for this conversation under 10 words.\nQuestion: {request.query}\nAnswer: {answer}\nTitle:"
+        title_response = gemini_model.generate_content(title_prompt)
+        chat_name = title_response.text.strip() if hasattr(title_response, 'text') else str(title_response)
         chat_doc = {
             "user_id": request.user_id,
             "created_at": now,
+            "chat_name": chat_name,
             "messages": [
                 {"message_id": str(uuid4()), "role": "user", "content": request.query, "timestamp": now},
                 {"message_id": str(uuid4()), "role": "assistant", "content": answer, "timestamp": now, "references": references}
@@ -112,7 +140,7 @@ async def list_chats(user_id: str):
     chat_collection = get_chat_collection()
     chats = await chat_collection.find({"user_id": user_id}).to_list(length=100)
     return [
-        {"chat_id": str(chat["_id"]), "created_at": chat["created_at"]}
+        {"chat_id": str(chat["_id"]), "created_at": chat["created_at"], "chat_name": chat.get("chat_name", "")}
         for chat in chats
     ]
 

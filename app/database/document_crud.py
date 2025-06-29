@@ -19,6 +19,11 @@ def get_chat_collection():
         raise RuntimeError("Database not initialized. Ensure connect_to_mongo() is called.")
     return mongo.db["chats"]
 
+def get_user_collection():
+    if mongo.db is None:
+        raise RuntimeError("Database not initialized. Ensure connect_to_mongo() is called.")
+    return mongo.db["users"]
+
 async def create_document(doc: dict):
     collection = get_document_collection()
     doc["created_at"] = datetime.utcnow()

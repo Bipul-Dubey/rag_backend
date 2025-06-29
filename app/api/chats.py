@@ -65,17 +65,14 @@ async def query_documents(request: QueryRequest):
 
     # Step 6: Build context and unique references
     context = "\n".join(chunk["chunk"] for chunk in top_chunks)
-    seen_doc_ids = set()
-    references = []
-    for chunk in top_chunks:
-        doc_id = chunk["document_id"]
-        if doc_id not in seen_doc_ids:
-            references.append({
-                "doc_id": doc_id,
-                "doc_name": docs_info.get(doc_id, {}).get("filename", ""),
-                "doc_url": docs_info.get(doc_id, {}).get("url", "")
-            })
-            seen_doc_ids.add(doc_id)
+    references = [
+    {
+        "doc_id": chunk["document_id"],
+        "doc_name": docs_info.get(chunk["document_id"], {}).get("filename", ""),
+        "doc_url": docs_info.get(chunk["document_id"], {}).get("url", "")
+    }
+    for chunk in top_chunks
+]
 
     # Step 7: Generate answer using Gemini
     prompt = f"Use only this context to answer the question.\nContext:\n{context}\n\nQuestion: {request.query}\nAnswer:"

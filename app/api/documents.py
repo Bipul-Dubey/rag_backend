@@ -183,10 +183,10 @@ async def embed_document(doc_id: str):
         raise HTTPException(status_code=500, detail=f"Embedding failed: {str(e)}")
 
 
-@router.get("/preview-url", response_model=dict)
-async def get_preview_url(document_id: str = Query(...)):
-    print("Received document_id:", repr(document_id))  # log with repr to catch quotes
-    document_id = document_id.strip('"')  # just in case
+@router.get("/{document_id}/preview-url", response_model=dict)
+async def get_preview_url(document_id: str):
+    print("Received document_id:", document_id)
+    document_id = document_id.strip('"') 
 
     if not ObjectId.is_valid(document_id):
         raise HTTPException(status_code=400, detail="Invalid document ID format hkjhkjh")

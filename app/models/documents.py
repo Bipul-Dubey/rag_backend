@@ -9,6 +9,7 @@ class DocumentIn(BaseModel):
     filetype: str
     size: int  # in bytes
     url: str
+    s3_key: str
     status: Literal["pending", "processing", "ready", "failed"] = "pending"
 
 

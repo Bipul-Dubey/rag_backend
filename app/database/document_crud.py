@@ -58,4 +58,12 @@ async def store_chunks(doc_id: str, user_id: str, chunks: list[str], embeddings:
         }
         for chunk, embedding in zip(chunks, embeddings)
     ]
-    await chunks_collection.insert_many(documents)    
+    await chunks_collection.insert_many(documents)
+
+async def ensure_indexes():
+    # Ensure compound index on user_id and document_id in document_chunks
+    collection = get_collection()
+    await collection.create_index([("user_id", 1), ("document_id", 1)])
+    # Ensure compound index on user_id and document_id in document_chunks
+    chunk_collection = get_chunk_collection()
+    await chunk_collection.create_index([("user_id", 1), ("document_id", 1)])

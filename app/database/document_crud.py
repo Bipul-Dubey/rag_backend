@@ -1,17 +1,23 @@
 # app/db/document_crud.py
-
 import app.database.mongo as mongo
 from datetime import datetime
 from bson import ObjectId
+
 
 def get_collection():
     if mongo.db is None:
         raise RuntimeError("Database not initialized. Ensure connect_to_mongo() is called.")
     return mongo.db["documents"]
 
+def get_chunk_collection():
+    if mongo.db is None:
+        raise RuntimeError("Database not initialized. Ensure connect_to_mongo() is called.")
+    return mongo.db["document_chunks"]
+
 async def create_document(doc: dict):
     collection = get_collection()
     doc["created_at"] = datetime.utcnow()
+    doc["status"] = "pending"
     result = await collection.insert_one(doc)
     return str(result.inserted_id)
 
@@ -33,3 +39,23 @@ async def delete_document_by_id(doc_id: str):
     collection = get_collection()
     result = await collection.delete_one({"_id": ObjectId(doc_id)})
     return result.deleted_count > 0
+
+async def update_status(doc_id: str, status: str):
+    collection = get_collection()
+    await collection.update_one(
+        {"_id": ObjectId(doc_id)},
+        {"$set": {"status": status}}
+    )
+
+async def store_chunks(doc_id: str, user_id: str, chunks: list[str], embeddings: list[list[float]]):
+    chunks_collection = get_chunk_collection()
+    documents = [
+        {
+            "document_id": doc_id,
+            "user_id": user_id,
+            "chunk": chunk,
+            "embedding": embedding
+        }
+        for chunk, embedding in zip(chunks, embeddings)
+    ]
+    await chunks_collection.insert_many(documents)    

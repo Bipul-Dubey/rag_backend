@@ -1,7 +1,7 @@
 # app/models/document.py
 from pydantic import BaseModel, Field
-from typing import Optional
 from datetime import datetime
+from typing import Literal
 
 class DocumentIn(BaseModel):
     user_id: str
@@ -9,6 +9,8 @@ class DocumentIn(BaseModel):
     filetype: str
     size: int  # in bytes
     url: str
+    status: Literal["pending", "processing", "ready", "failed"] = "pending"
+
 
 class DocumentOut(DocumentIn):
     id: str = Field(alias="_id")

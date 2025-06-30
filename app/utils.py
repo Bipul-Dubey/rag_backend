@@ -51,12 +51,12 @@ async def upload_file_to_s3(user_id: str, file_data: bytes, original_filename: s
         raise RuntimeError(f"S3 upload failed: {str(e)}")
     
 # ============= get presigned url ================
-def generate_presigned_url(key: str, expires_in: int = 3600) -> str:
+def generate_presigned_url(key: str, expires_in: int = 3600 * 24) -> str:
     """
     Generate a pre-signed URL to access a private S3 file.
 
     :param key: Full S3 key/path of the file (e.g., 'documents/user_xxx/abc.pdf')
-    :param expires_in: Expiry time in seconds (default 1 hour)
+    :param expires_in: Expiry time in seconds (default 24 hour)
     :return: Pre-signed URL as a string
     """
     try:
